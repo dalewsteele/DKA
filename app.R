@@ -7,7 +7,7 @@ library(openxlsx)
 # ============================================================================
 # CONSTANTS
 # ============================================================================
-VERSION <- "1.32.1"
+VERSION <- "1.32.2"
 WEIGHT_CAP <- 75
 BOLUS_10_MAX <- 500
 BOLUS_20_MAX <- 1000
@@ -394,6 +394,7 @@ infusionRatesServer <- function(id, selected_rates, actualWeight, glucose, k_con
 # ============================================================================
 ui <- fluidPage(
   tags$head(
+    tags$title("DKA: Fluid Calculator"),
     tags$meta(name = "viewport", content = "width=device-width, initial-scale=1.0"),
     tags$script(HTML("
       $(document).on('click', '#hideDisclaimer', function() {
@@ -422,12 +423,16 @@ ui <- fluidPage(
     "))
   ),
   
-  titlePanel(
+  div(
+    class = "container-fluid",
     div(
-      "DKA: Fluid Calculator",
-      tags$small(
-        style = "font-size: 0.5em; color: #888; margin-left: 10px;",
-        sprintf("v%s | Updated: %s", VERSION, format(Sys.Date(), "%Y-%m-%d"))
+      style = "padding: 15px 0 10px 0;",
+      h2(
+        "DKA: Fluid Calculator",
+        tags$small(
+          style = "font-size: 0.5em; color: #888; margin-left: 10px;",
+          sprintf("v%s | Updated: %s", VERSION, format(Sys.Date(), "%Y-%m-%d"))
+        )
       )
     )
   ),
