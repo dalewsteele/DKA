@@ -1,9 +1,11 @@
 TODO
 
 Consider sharing with Karen Gripp
-Consider adding a toggle to use SI units
+
   
 Done
+  2025-10-20
+    Added 'deploy.sh' to automate deploying to shiny server
   2025-10-19
     Update server to DKA_v32  
   2025-10-07
