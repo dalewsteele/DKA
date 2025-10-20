@@ -1,0 +1,14 @@
+TODO
+
+Consider sharing with Karen Gripp
+Consider adding a toggle to use SI units
+  
+Done
+  2025-10-19
+    Update server to DKA_v32  
+  2025-10-07
+    Copied to "/srv/shiny-server/dka/app.r"
+    Install updated shiny App 'DKA_v26.r' on uelgrande
+      sudo cp ~/"Brown Dropbox"/"Dale Steele"/"DKA pathway"/DKA_v25.R /srv/shiny-server/dka/app.R
+    Accessible at:  https://shiny.ped-em.org/dka
+    Add link from 'pathways.ped-em.org/dka'
