@@ -2,7 +2,6 @@ TODO
 
 Consider sharing with Karen Gripp
 
-  
 Done
   2025-10-20
     Added 'deploy.sh' to automate deploying to shiny server
