@@ -426,7 +426,7 @@ ui <- fluidPage(
     div(
       "DKA: Fluid Calculator",
       tags$small(
-        style = "font-size: 0.6em; color: #888; margin-left: 10px;",
+        style = "font-size: 0.5em; color: #888; margin-left: 10px;",
         sprintf("v%s | Updated: %s", VERSION, format(Sys.Date(), "%Y-%m-%d"))
       )
     )
