@@ -6,3 +6,6 @@ DKA pathway.Rproj
 _old
 Icon?
 ._*
+deploy.sh
+Icon
+.DS_Store
