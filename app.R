@@ -422,7 +422,15 @@ ui <- fluidPage(
     "))
   ),
   
-  titlePanel(sprintf("DKA: Fluid Calculator (v%s)", VERSION)),
+  titlePanel(
+    div(
+      "DKA: Fluid Calculator",
+      tags$small(
+        style = "font-size: 0.6em; color: #888; margin-left: 10px;",
+        sprintf("v%s | Updated: %s", VERSION, format(Sys.Date(), "%Y-%m-%d"))
+      )
+    )
+  ),
   
   sidebarLayout(
     sidebarPanel(
