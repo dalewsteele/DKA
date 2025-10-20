@@ -7,7 +7,7 @@ library(openxlsx)
 # ============================================================================
 # CONSTANTS
 # ============================================================================
-VERSION <- "1.32.3"
+VERSION <- "1.32.2"
 WEIGHT_CAP <- 75
 BOLUS_10_MAX <- 500
 BOLUS_20_MAX <- 1000
@@ -414,67 +414,12 @@ ui <- fluidPage(
         table { font-size: 12px !important; }
         input[type='number'], select { font-size: 16px !important; }
       }
-      
-      /* COMPACT SIDEBAR STYLES */
-      .well {
-        padding: 12px !important;
-      }
-      
-      .form-group {
-        margin-bottom: 12px !important;
-      }
-      
-      .control-label {
-        margin-bottom: 3px !important;
-        font-size: 14px;
-        font-weight: 500;
-      }
-      
-      .radio, .checkbox {
-        margin-top: 3px !important;
-        margin-bottom: 3px !important;
-      }
-      
-      input[type='number'], select {
-        height: 32px;
-        padding: 4px 8px;
-        font-size: 14px;
-      }
-      
-      hr {
-        margin-top: 12px !important;
-        margin-bottom: 12px !important;
-      }
-      
-      .inline-warning {
-        margin: 5px 0 0 0 !important;
-        padding: 6px !important;
-        font-size: 13px !important;
-      }
-      
-      /* Compact checkbox and button at bottom of sidebar */
-      #showFormulas {
-        margin-top: 0 !important;
-        margin-bottom: 0 !important;
-      }
-      
-      #showFormulas + span {
-        font-size: 13px !important;
-        font-weight: normal !important;
-      }
-      
-      #resetButton {
-        padding: 6px 12px !important;
-        font-size: 13px !important;
-        height: auto !important;
-      }
-      
-      /* FORMULA AND CALCULATION STYLES */
       .formula-box { background-color: #f8f9fa; border-left: 4px solid #007bff; padding: 12px; margin: 10px 0; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 13px; }
       .formula-title { font-weight: bold; color: #007bff; margin-bottom: 8px; }
       .formula-step { margin: 5px 0; padding-left: 10px; }
       .calculation-details { background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-top: 10px; }
       .calculation-selection { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; margin: 15px 0; }
+      .inline-warning { margin: 8px 0 0 0; }
     "))
   ),
   
@@ -525,9 +470,9 @@ ui <- fluidPage(
       numericInput("k_conc", "Potassium (mEq/L)", value = 40, min = 0, max = 80, step = 1),
       uiOutput("kWarning"),
       tags$hr(),
-      checkboxInput("showFormulas", "Show Formulas", value = FALSE),
-      tags$hr(style = "margin-top: 8px !important; margin-bottom: 8px !important;"),
-      actionButton("resetButton", "Reset Defaults", class = "btn-secondary", style = "width: 100%;")
+      checkboxInput("showFormulas", "Show Calculation Formulas", value = FALSE),
+      tags$hr(),
+      actionButton("resetButton", "Reset to Defaults", class = "btn-secondary", style = "width: 100%;")
     ),
     
     mainPanel(
