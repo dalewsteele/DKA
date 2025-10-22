@@ -6,7 +6,7 @@ library(dplyr)
 # ============================================================================
 # CONSTANTS
 # ============================================================================
-VERSION <- "4.0.0"
+VERSION <- "4.0.1"
 WEIGHT_CAP <- 75
 BOLUS_10_MAX <- 500
 BOLUS_20_MAX <- 1000
@@ -767,27 +767,6 @@ ui <- page_sidebar(
         div(style = "height: 1px; background-color: #999; margin: 0.25rem 0 0.25rem 0;")
       ),
       
-      # Formula reference
-      conditionalPanel(
-        condition = "input.showFormulas == true",
-        card(
-          card_header(
-            class = "bg-secondary text-white",
-            icon("calculator"), " Formula Reference"
-          ),
-          card_body(
-            tags$strong("Holliday-Segar:"), 
-            "First 10 kg = 100 mL/kg/day; Next 10 kg = 50 mL/kg/day; Above 20 kg = 20 mL/kg/day",
-            tags$hr(),
-            tags$strong("Deficit:"), 
-            "Total Deficit (mL) = Weight (kg) × 1000 × Deficit (%)",
-            tags$hr(),
-            tags$strong("TREKK:"), 
-            "5-10 kg: 6.5 mL/kg/hr | 10-20 kg: 6 mL/kg/hr | 20-40 kg: 5 mL/kg/hr | ≥40 kg: 4 mL/kg/hr (max 250)"
-          )
-        )
-      ),
-      
       # Results
       hollidaySegarUI("hs_module"),
       deficitMaintenanceUI("dm_module"),
@@ -798,204 +777,261 @@ ui <- page_sidebar(
       title = "Two-Bag Calculator",
       icon = icon("flask"),
       twoBagUI("twobag_module")
+    ),
+    
+    nav_panel(
+      title = "Formula Reference",
+      icon = icon("book"),
+      card(
+        card_header(
+          class = "bg-secondary text-white",
+          icon("calculator"), " Formula Reference"
+        ),
+        card_body(
+          tags$h5("Holliday-Segar Maintenance Calculation"),
+          tags$ul(
+            tags$li("First 10 kg: 100 mL/kg/day"),
+            tags$li("Next 10 kg (10-20 kg): 50 mL/kg/day"),
+            tags$li("Above 20 kg: 20 mL/kg/day")
+          ),
+          tags$p(class = "text-muted", "Example: For a 25 kg patient:"),
+          tags$p(class = "ms-3 text-muted", 
+                 "(10 × 100) + (10 × 50) + (5 × 20) = 1,000 + 500 + 100 = 1,600 mL/day = 66.7 mL/hr"),
+          
+          tags$hr(),
+          
+          tags$h5("Fluid Deficit Calculation"),
+          tags$p(tags$strong("Total Deficit (mL) = Weight (kg) × 1000 × Deficit (%)")),
+          tags$p(class = "text-muted", "Common deficit levels:"),
+          tags$ul(
+            tags$li("Mild dehydration: 5%"),
+            tags$li("Moderate dehydration: 7%"),
+            tags$li("Severe dehydration: 10%")
+          ),
+          
+          tags$hr(),
+          
+          tags$h5("TREKK Guideline Rates"),
+          tags$p("Weight-based hourly rates:"),
+          tags$ul(
+            tags$li("5-10 kg: 6.5 mL/kg/hr"),
+            tags$li("10-20 kg: 6 mL/kg/hr"),
+            tags$li("20-40 kg: 5 mL/kg/hr"),
+            tags$li("≥40 kg: 4 mL/kg/hr (maximum 250 mL/hr)")
+          ),
+          tags$p(class = "text-muted", 
+                 HTML('<img src="https://upload.wikimedia.org/wikipedia/commons/c/cf/Flag_of_Canada.svg" height="12px" style="vertical-align:middle;"> Based on the TREKK (Translating Emergency Knowledge for Kids) guideline from Canada')),
+          
+          tags$hr(),
+          
+          tags$h5("DKA Fluid Management Principles"),
+          tags$ul(
+            tags$li(tags$strong("Initial Bolus:"), " Typically 10-20 mL/kg of 0.9% NaCl over 1 hour (max 500-1000 mL)"),
+            tags$li(tags$strong("Deficit Replacement:"), " Remaining deficit replaced over 24-72 hours (commonly 48 hours)"),
+            tags$li(tags$strong("Maintenance:"), " Continue maintenance fluids alongside deficit replacement"),
+            tags$li(tags$strong("Rate Limits:"), " Avoid exceeding 1.5-2× maintenance rate to prevent cerebral edema risk"),
+            tags$li(tags$strong("Two-Bag System:"), " Allows rapid glucose adjustment without changing total fluid rate")
+          )
+        )
+      )
     )
   )
 )
 
 # ============================================================================
 # SERVER
-# ============================================================================
-server <- function(input, output, session) {
-  
-  # Weight validation
-  output$weightWarning <- renderUI({
-    if (is.null(input$weight) || is.na(input$weight)) return(NULL)
+  # ============================================================================
+  server <- function(input, output, session) {
     
-    if (input$weight < MIN_WEIGHT | input$weight > MAX_WEIGHT) {
-      tags$div(
-        class = "inline-warning",
-        style = "background-color: #fff3cd; color: #856404; border-left: 3px solid #ffc107; padding: 8px; border-radius: 3px; font-size: 14px;",
-        sprintf("⚠️ Weight (%.1f kg) is outside typical range (%d-%d kg)", input$weight, MIN_WEIGHT, MAX_WEIGHT)
-      )
-    }
-  })
-  
-  # Deficit validation
-  output$deficitWarning <- renderUI({
-    if (input$deficitCategory == "" || is.null(input$deficitCategory)) return(NULL)
+    # Weight validation
+    output$weightWarning <- renderUI({
+      if (is.null(input$weight) || is.na(input$weight)) return(NULL)
+      
+      if (input$weight < MIN_WEIGHT | input$weight > MAX_WEIGHT) {
+        tags$div(
+          class = "inline-warning",
+          style = "background-color: #fff3cd; color: #856404; border-left: 3px solid #ffc107; padding: 8px; border-radius: 3px; font-size: 14px;",
+          sprintf("⚠️ Weight (%.1f kg) is outside typical range (%d-%d kg)", input$weight, MIN_WEIGHT, MAX_WEIGHT)
+        )
+      }
+    })
     
-    deficit_val <- if (input$deficitCategory == "custom") input$customDeficit else as.numeric(input$deficitCategory)
+    # Deficit validation
+    output$deficitWarning <- renderUI({
+      if (input$deficitCategory == "" || is.null(input$deficitCategory)) return(NULL)
+      
+      deficit_val <- if (input$deficitCategory == "custom") input$customDeficit else as.numeric(input$deficitCategory)
+      
+      if (!is.na(deficit_val) && deficit_val > 12) {
+        tags$div(
+          class = "inline-warning",
+          style = "background-color: #fff3cd; color: #856404; border-left: 3px solid #ffc107; padding: 8px; border-radius: 3px; font-size: 14px;",
+          sprintf("⚠️ Deficit (%.1f%%) is very high. Verify accuracy.", deficit_val)
+        )
+      }
+    })
     
-    if (!is.na(deficit_val) && deficit_val > 12) {
-      tags$div(
-        class = "inline-warning",
-        style = "background-color: #fff3cd; color: #856404; border-left: 3px solid #ffc107; padding: 8px; border-radius: 3px; font-size: 14px;",
-        sprintf("⚠️ Deficit (%.1f%%) is very high. Verify accuracy.", deficit_val)
-      )
-    }
-  })
-  
-  # Bolus validation
-  output$bolusWarning <- renderUI({
-    if (input$bolusOption == "" || is.null(input$bolusOption) || is.null(input$weight) || is.na(input$weight)) return(NULL)
+    # Bolus validation
+    output$bolusWarning <- renderUI({
+      if (input$bolusOption == "" || is.null(input$bolusOption) || is.null(input$weight) || is.na(input$weight)) return(NULL)
+      
+      w <- input$weight
+      
+      bolus <- if (input$bolusOption == "custom") {
+        if (is.null(input$customBolus) || is.na(input$customBolus)) return(NULL)
+        input$customBolus
+      } else {
+        bolus_per_kg <- as.numeric(input$bolusOption)
+        max_bolus <- ifelse(bolus_per_kg == 10, BOLUS_10_MAX, BOLUS_20_MAX)
+        min(w * bolus_per_kg, max_bolus)
+      }
+      
+      if (w > 0 && bolus > (w * 25)) {
+        tags$div(
+          class = "inline-warning",
+          style = "background-color: #f8d7da; color: #721c24; border-left: 3px solid #dc3545; padding: 8px; border-radius: 3px; font-size: 14px;",
+          sprintf("🛑 Bolus (%.0f mL) is very large for %.1f kg weight. Verify accuracy.", bolus, w)
+        )
+      } else if (w > 0 && bolus > (w * 20)) {
+        tags$div(
+          class = "inline-warning",
+          style = "background-color: #fff3cd; color: #856404; border-left: 3px solid #ffc107; padding: 8px; border-radius: 3px; font-size: 14px;",
+          sprintf("⚠️ Bolus (%.0f mL) exceeds 20 mL/kg. Verify this is intentional.", bolus)
+        )
+      }
+    })
     
-    w <- input$weight
+    # Reset button
+    observeEvent(input$resetButton, {
+      updateNumericInput(session, "weight", value = NA)
+      updateSelectInput(session, "deficitCategory", selected = "")
+      updateSelectInput(session, "bolusOption", selected = "")
+      updateSelectInput(session, "replaceHours", selected = 48)
+      updateCheckboxInput(session, "hs", value = TRUE)
+      updateCheckboxInput(session, "md", value = FALSE)
+      updateCheckboxInput(session, "trekk", value = FALSE)
+      updateCheckboxInput(session, "showFormulas", value = FALSE)
+      showNotification("Reset to default values", 
+                       type = "message", 
+                       duration = 2)
+    })
     
-    bolus <- if (input$bolusOption == "custom") {
-      if (is.null(input$customBolus) || is.na(input$customBolus)) return(NULL)
-      input$customBolus
-    } else {
+    # Reactives
+    actualWeight <- reactive({ 
+      req(input$weight)
+      input$weight 
+    })
+    
+    cappedWeight <- reactive({ 
+      min(actualWeight(), WEIGHT_CAP) 
+    })
+    
+    maint_hourly <- reactive({ 
+      calc_holliday_segar(cappedWeight()) / 24 
+    })
+    
+    deficit_pct <- reactive({
+      if (!isTRUE(input$md)) return(7)
+      req(input$deficitCategory)
+      if (input$deficitCategory == "custom") {
+        req(input$customDeficit)
+        input$customDeficit
+      } else {
+        as.numeric(input$deficitCategory)
+      }
+    })
+    
+    total_deficit <- reactive({ 
+      cappedWeight() * 1000 * deficit_pct() / 100 
+    })
+    
+    bolus_mL <- reactive({
+      if (!isTRUE(input$md)) return(0)
+      req(input$bolusOption)
+      w <- actualWeight()
+      if (input$bolusOption == "custom") {
+        req(input$customBolus)
+        return(input$customBolus)
+      }
       bolus_per_kg <- as.numeric(input$bolusOption)
       max_bolus <- ifelse(bolus_per_kg == 10, BOLUS_10_MAX, BOLUS_20_MAX)
       min(w * bolus_per_kg, max_bolus)
-    }
+    })
     
-    if (w > 0 && bolus > (w * 25)) {
-      tags$div(
-        class = "inline-warning",
-        style = "background-color: #f8d7da; color: #721c24; border-left: 3px solid #dc3545; padding: 8px; border-radius: 3px; font-size: 14px;",
-        sprintf("🛑 Bolus (%.0f mL) is very large for %.1f kg weight. Verify accuracy.", bolus, w)
-      )
-    } else if (w > 0 && bolus > (w * 20)) {
-      tags$div(
-        class = "inline-warning",
-        style = "background-color: #fff3cd; color: #856404; border-left: 3px solid #ffc107; padding: 8px; border-radius: 3px; font-size: 14px;",
-        sprintf("⚠️ Bolus (%.0f mL) exceeds 20 mL/kg. Verify this is intentional.", bolus)
-      )
-    }
-  })
-  
-  # Reset button
-  observeEvent(input$resetButton, {
-    updateNumericInput(session, "weight", value = NA)
-    updateSelectInput(session, "deficitCategory", selected = "")
-    updateSelectInput(session, "bolusOption", selected = "")
-    updateSelectInput(session, "replaceHours", selected = 48)
-    updateCheckboxInput(session, "hs", value = TRUE)
-    updateCheckboxInput(session, "md", value = FALSE)
-    updateCheckboxInput(session, "trekk", value = FALSE)
-    updateCheckboxInput(session, "showFormulas", value = FALSE)
-    showNotification("Reset to default values", 
-                     type = "message", 
-                     duration = 2)
-  })
-  
-  # Reactives
-  actualWeight <- reactive({ 
-    req(input$weight)
-    input$weight 
-  })
-  
-  cappedWeight <- reactive({ 
-    min(actualWeight(), WEIGHT_CAP) 
-  })
-  
-  maint_hourly <- reactive({ 
-    calc_holliday_segar(cappedWeight()) / 24 
-  })
-  
-  deficit_pct <- reactive({
-    if (!isTRUE(input$md)) return(7)
-    req(input$deficitCategory)
-    if (input$deficitCategory == "custom") {
-      req(input$customDeficit)
-      input$customDeficit
-    } else {
-      as.numeric(input$deficitCategory)
-    }
-  })
-  
-  total_deficit <- reactive({ 
-    cappedWeight() * 1000 * deficit_pct() / 100 
-  })
-  
-  bolus_mL <- reactive({
-    if (!isTRUE(input$md)) return(0)
-    req(input$bolusOption)
-    w <- actualWeight()
-    if (input$bolusOption == "custom") {
-      req(input$customBolus)
-      return(input$customBolus)
-    }
-    bolus_per_kg <- as.numeric(input$bolusOption)
-    max_bolus <- ifelse(bolus_per_kg == 10, BOLUS_10_MAX, BOLUS_20_MAX)
-    min(w * bolus_per_kg, max_bolus)
-  })
-  
-  remaining_deficit <- reactive({ 
-    max(total_deficit() - bolus_mL(), 0) 
-  })
-  
-  deficit_per_hour <- reactive({ 
-    remaining_deficit() / as.numeric(input$replaceHours) 
-  })
-  
-  final_deficit_maint_rate <- reactive({ 
-    maint_hourly() + deficit_per_hour() 
-  })
-  
-  trekk_hourly <- reactive({ 
-    calc_trekk_rate(actualWeight()) 
-  })
-  
-  # Modules
-  hollidaySegarServer("hs_module", cappedWeight, maint_hourly, 
-                      reactive(input$showFormulas))
-  
-  deficitMaintenanceServer("dm_module", cappedWeight, actualWeight, 
-                           total_deficit, bolus_mL,
-                           remaining_deficit, deficit_per_hour, maint_hourly, 
-                           final_deficit_maint_rate,
-                           deficit_pct, reactive(input$bolusOption),
-                           reactive(input$replaceHours), 
-                           reactive(input$showFormulas), 
-                           BOLUS_10_MAX, BOLUS_20_MAX)
-  
-  trekkGuidelineServer("trekk_module", actualWeight, trekk_hourly, 
-                       reactive(input$showFormulas))
-  
-  # Two-bag module
-  twoBagServer("twobag_module", 
-               maint_hourly, 
-               final_deficit_maint_rate, 
-               trekk_hourly,
-               reactive(input$hs),
-               reactive(input$md),
-               reactive(input$trekk),
-               reactive(input$showFormulas),
-               actualWeight)
-  
-  # Weight notice
-  output$weightNotice <- renderUI({
-    req(input$weight)
-    w <- actualWeight()
-    if (w > WEIGHT_CAP) {
-      card(
-        class = "border-danger mb-1",
-        card_body(
-          class = "bg-danger bg-opacity-10 py-1 text-dark",
-          icon("triangle-exclamation", class = "text-danger"), " ",
-          tags$strong(sprintf("Calculations capped at %d kg (entered %.1f kg)", 
-                              WEIGHT_CAP, w))
+    remaining_deficit <- reactive({ 
+      max(total_deficit() - bolus_mL(), 0) 
+    })
+    
+    deficit_per_hour <- reactive({ 
+      remaining_deficit() / as.numeric(input$replaceHours) 
+    })
+    
+    final_deficit_maint_rate <- reactive({ 
+      maint_hourly() + deficit_per_hour() 
+    })
+    
+    trekk_hourly <- reactive({ 
+      calc_trekk_rate(actualWeight()) 
+    })
+    
+    # Modules
+    hollidaySegarServer("hs_module", cappedWeight, maint_hourly, 
+                        reactive(input$showFormulas))
+    
+    deficitMaintenanceServer("dm_module", cappedWeight, actualWeight, 
+                             total_deficit, bolus_mL,
+                             remaining_deficit, deficit_per_hour, maint_hourly, 
+                             final_deficit_maint_rate,
+                             deficit_pct, reactive(input$bolusOption),
+                             reactive(input$replaceHours), 
+                             reactive(input$showFormulas), 
+                             BOLUS_10_MAX, BOLUS_20_MAX)
+    
+    trekkGuidelineServer("trekk_module", actualWeight, trekk_hourly, 
+                         reactive(input$showFormulas))
+    
+    # Two-bag module
+    twoBagServer("twobag_module", 
+                 maint_hourly, 
+                 final_deficit_maint_rate, 
+                 trekk_hourly,
+                 reactive(input$hs),
+                 reactive(input$md),
+                 reactive(input$trekk),
+                 reactive(input$showFormulas),
+                 actualWeight)
+    
+    # Weight notice
+    output$weightNotice <- renderUI({
+      req(input$weight)
+      w <- actualWeight()
+      if (w > WEIGHT_CAP) {
+        card(
+          class = "border-danger mb-1",
+          card_body(
+            class = "bg-danger bg-opacity-10 py-1 text-dark",
+            icon("triangle-exclamation", class = "text-danger"), " ",
+            tags$strong(sprintf("Calculations capped at %d kg (entered %.1f kg)", 
+                                WEIGHT_CAP, w))
+          )
         )
-      )
-    }
-  })
-  
-  # Getting started note
-  output$gettingStartedNote <- renderUI({
-    if (is.null(input$weight) || is.na(input$weight)) {
-      card(
-        class = "border-info mb-1",
-        card_body(
-          class = "bg-info bg-opacity-10 text-dark py-1",
-          icon("circle-info", class = "text-info me-2"),
-          tags$strong("Getting Started:"),
-          "Enter patient weight in the sidebar to begin."
+      }
+    })
+    
+    # Getting started note
+    output$gettingStartedNote <- renderUI({
+      if (is.null(input$weight) || is.na(input$weight)) {
+        card(
+          class = "border-info mb-1",
+          card_body(
+            class = "bg-info bg-opacity-10 text-dark py-1",
+            icon("circle-info", class = "text-info me-2"),
+            tags$strong("Getting Started:"),
+            "Enter patient weight in the sidebar to begin."
+          )
         )
-      )
-    }
-  })
-}
-
-shinyApp(ui = ui, server = server)
+      }
+    })
+  }
+  
+  shinyApp(ui = ui, server = server)
