@@ -318,6 +318,24 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
                          hs_selected, md_selected, trekk_selected, showFormulas, actualWeight) {
   moduleServer(id, function(input, output, session) {
     
+    # Auto-select method when only one is checked in Calculator tab
+    observe({
+      # Count how many methods are selected
+      methods_selected <- c(hs_selected(), md_selected(), trekk_selected())
+      num_selected <- sum(methods_selected, na.rm = TRUE)
+      
+      # If exactly one method is selected, auto-select it
+      if (num_selected == 1) {
+        if (isTRUE(hs_selected())) {
+          updateSelectInput(session, "method_select", selected = "hs")
+        } else if (isTRUE(md_selected())) {
+          updateSelectInput(session, "method_select", selected = "dm")
+        } else if (isTRUE(trekk_selected())) {
+          updateSelectInput(session, "method_select", selected = "trekk")
+        }
+      }
+    })
+    
     # Conditionally show DKA checkbox only when glucose <= 150
     output$dkaCheckbox <- renderUI({
       if (is.null(input$blood_glucose) || is.na(input$blood_glucose)) return(NULL)
