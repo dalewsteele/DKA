@@ -893,7 +893,6 @@ ui <- page_sidebar(
             tags$li(tags$strong("Initial Bolus:"), " Typically 10-20 mL/kg of 0.9% NaCl over 1 hour (max 500-1000 mL)"),
             tags$li(tags$strong("Deficit Replacement:"), " Remaining deficit replaced over 24-72 hours (commonly 48 hours)"),
             tags$li(tags$strong("Maintenance:"), " Continue maintenance fluids alongside deficit replacement"),
-            tags$li(tags$strong("Rate Limits:"), " Avoid exceeding 1.5-2× maintenance rate to prevent cerebral edema risk"),
             tags$li(tags$strong("Two-Bag System:"), " Allows rapid glucose adjustment without changing total fluid rate")
           )
         )
