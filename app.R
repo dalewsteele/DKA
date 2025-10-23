@@ -6,7 +6,7 @@ library(dplyr)
 # ============================================================================
 # CONSTANTS
 # ============================================================================
-VERSION <- "4.1.1"
+VERSION <- "4.0.1"
 WEIGHT_CAP <- 75
 BOLUS_10_MAX <- 500
 BOLUS_20_MAX <- 1000
@@ -883,7 +883,8 @@ ui <- page_sidebar(
           tags$ul(
             tags$li(tags$strong("Initial Bolus:"), " Typically 10-20 mL/kg of 0.9% NaCl over 1 hour (max 500-1000 mL)"),
             tags$li(tags$strong("Deficit Replacement:"), " Remaining deficit replaced over 24-72 hours (commonly 48 hours)"),
-            tags$li(tags$strong("Rate Limits:"), " Avoid exceeding 2× maintenance rate to prevent cerebral edema risk"),
+            tags$li(tags$strong("Maintenance:"), " Continue maintenance fluids alongside deficit replacement"),
+            tags$li(tags$strong("Rate Limits:"), " Avoid exceeding 1.5-2× maintenance rate to prevent cerebral edema risk"),
             tags$li(tags$strong("Two-Bag System:"), " Allows rapid glucose adjustment without changing total fluid rate")
           )
         )
@@ -974,6 +975,12 @@ server <- function(input, output, session) {
     updateCheckboxInput(session, "md", value = FALSE)
     updateCheckboxInput(session, "trekk", value = FALSE)
     updateCheckboxInput(session, "showFormulas", value = FALSE)
+    
+    # Reset Two-Bag Calculator inputs
+    updateSelectInput(session, "twobag_module-method_select", selected = "")
+    updateRadioButtons(session, "twobag_module-glucose_units", selected = "mgdl")
+    updateNumericInput(session, "twobag_module-blood_glucose", value = NA)
+    
     showNotification("Reset to default values", 
                      type = "message", 
                      duration = 2)
