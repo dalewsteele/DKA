@@ -10,3 +10,6 @@ deploy.config
 Icon?
 .DS_Store
 TODO
+update_dka.R
+update_dka.sh
+app_update_log
