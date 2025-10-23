@@ -6,7 +6,7 @@ library(dplyr)
 # ============================================================================
 # CONSTANTS
 # ============================================================================
-VERSION <- "2.1.4"
+VERSION <- "2.1.5"
 WEIGHT_CAP <- 75
 BOLUS_10_MAX <- 500
 BOLUS_20_MAX <- 1000
@@ -62,7 +62,7 @@ hollidaySegarServer <- function(id, cappedWeight, maint_hourly, showFormulas) {
           tags$div(
             style = "text-align: center;",
             tags$div(class = "text-muted small", style = "font-size: 0.75rem;", "Total Replacement Rate"),
-            tags$div(style = "font-size: 1.5rem; font-weight: bold; color: #2C3E50; margin: 2px 0;",
+            tags$div(class = "rate-value-hs", style = "font-size: 1.5rem; font-weight: bold; margin: 2px 0;",
                      paste(rate_1_5, "mL/hr")),
             tags$div(class = "text-muted", style = "font-size: 0.75rem;",
                      sprintf("Maint: %d | ×2.0: %d mL/hr", round(maint, 0), round(maint * 2, 0)))
@@ -232,7 +232,7 @@ trekkGuidelineServer <- function(id, actualWeight, trekk_hourly, showFormulas) {
           tags$div(
             style = "text-align: center;",
             tags$div(class = "text-muted small", style = "font-size: 0.75rem;", "Total Replacement Rate"),
-            tags$div(style = "font-size: 1.5rem; font-weight: bold; color: #3498DB; margin: 2px 0;",
+            tags$div(class = "rate-value-trekk", style = "font-size: 1.5rem; font-weight: bold; margin: 2px 0;",
                      paste(round(rate, 0), "mL/hr")),
             tags$div(class = "text-muted", style = "font-size: 0.75rem;",
                      if (is_capped) {
@@ -660,20 +660,29 @@ ui <- page_sidebar(
     fg = "#000000"
   ),
   tags$style(HTML("
-    .card { margin-bottom: 0.3rem !important; margin-top: 0 !important; position: relative !important; }
-    .form-group { margin-bottom: 0.15rem !important; }
-    .radio { margin-bottom: 0.15rem !important; }
-    .checkbox { margin-bottom: 0.15rem !important; }
-    .card-header { padding: 0.5rem 1rem !important; font-size: 0.95rem !important; }
+    .card { margin-bottom: 0.2rem !important; margin-top: 0 !important; position: relative !important; }
+    .form-group { margin-bottom: 0.1rem !important; }
+    .radio { margin-bottom: 0.1rem !important; }
+    .checkbox { margin-bottom: 0.1rem !important; }
+    .card-header { padding: 0.4rem 1rem !important; font-size: 0.95rem !important; }
     .bslib-sidebar-layout > .main { padding-top: 0.5rem !important; }
-    .form-label { margin-bottom: 0.15rem !important; }
+    .form-label { margin-bottom: 0.1rem !important; }
     
     /* Tighter spacing in sidebar */
-    .bslib-sidebar-layout .sidebar .card { margin-bottom: 0.25rem !important; }
+    .bslib-sidebar-layout .sidebar .card { margin-bottom: 0.15rem !important; }
     
     /* Dark mode transitions */
     body, .card, .card-header, .card-body, .form-control, .form-select, .btn {
       transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+    
+    /* Rate value colors for light mode */
+    .rate-value-hs {
+      color: #2C3E50 !important;
+    }
+    
+    .rate-value-trekk {
+      color: #3498DB !important;
     }
     
     /* Dark mode adjustments */
@@ -691,6 +700,15 @@ ui <- page_sidebar(
     
     [data-bs-theme='dark'] .text-muted {
       color: #adb5bd !important;
+    }
+    
+    /* Rate value colors for dark mode - lighter colors for readability */
+    [data-bs-theme='dark'] .rate-value-hs {
+      color: #85C1E2 !important;
+    }
+    
+    [data-bs-theme='dark'] .rate-value-trekk {
+      color: #5DADE2 !important;
     }
   ")),
   tags$script(HTML("
@@ -722,7 +740,7 @@ ui <- page_sidebar(
   ")),
   sidebar = sidebar(
     width = 300,
-    div(style = "margin-bottom: 0.1rem;",
+    div(style = "display: flex; justify-content: center; margin-bottom: 0.05rem;",
         numericInput("weight", "Patient Weight (kg):", value = NULL, min = 1, step = 0.1, width = "150px")),
     uiOutput("weightWarning"),
     
@@ -730,8 +748,8 @@ ui <- page_sidebar(
       card_header(class = "py-1", "Deficit Calculation Parameters"),
       card_body(
         class = "py-0",
-        style = "padding-top: 0.25rem !important; padding-bottom: 0.25rem !important;",
-        div(style = "margin-bottom: 0.1rem;",
+        style = "padding-top: 0.15rem !important; padding-bottom: 0.15rem !important;",
+        div(style = "margin-bottom: 0.05rem;",
             selectInput("deficitCategory", "Estimated Fluid Deficit:",
                         choices = c("Select one..." = "", 
                                     "Mild (5%)" = 5, 
@@ -741,13 +759,13 @@ ui <- page_sidebar(
                         selected = "")),
         conditionalPanel(
           condition = "input.deficitCategory == 'custom'",
-          div(style = "margin-bottom: 0.1rem;",
+          div(style = "margin-bottom: 0.05rem;",
               numericInput("customDeficit", "Custom Deficit (%)", 
                            value = 7, min = 0, max = 15, step = 0.1))
         ),
         uiOutput("deficitWarning"),
         
-        div(style = "margin-bottom: 0.1rem;",
+        div(style = "margin-bottom: 0.05rem;",
             selectInput("bolusOption", "Fluid Bolus Option:",
                         choices = c("Select one..." = "", 
                                     "10 mL/kg (max 500 mL)" = "10",
@@ -756,7 +774,7 @@ ui <- page_sidebar(
                         selected = "")),
         conditionalPanel(
           condition = "input.bolusOption == 'custom'",
-          div(style = "margin-bottom: 0.1rem;",
+          div(style = "margin-bottom: 0.05rem;",
               numericInput("customBolus", "Custom Bolus (mL)", 
                            value = 0, min = 0, step = 10))
         ),
@@ -776,9 +794,9 @@ ui <- page_sidebar(
       card_header(class = "py-1", "Display Options"),
       card_body(
         class = "py-0",
-        style = "padding-top: 0.25rem !important; padding-bottom: 0.25rem !important;",
+        style = "padding-top: 0.15rem !important; padding-bottom: 0.15rem !important;",
         checkboxInput("showFormulas", "Show Calculation Formulas", value = FALSE),
-        div(style = "margin-top: 0.2rem;",
+        div(style = "margin-top: 0.1rem;",
             checkboxInput("darkMode", 
                           HTML('<span id="darkModeLabel"><i class="fa-solid fa-moon"></i> Dark Mode</span>'), 
                           value = FALSE))
