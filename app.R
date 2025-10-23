@@ -660,13 +660,16 @@ ui <- page_sidebar(
     fg = "#000000"
   ),
   tags$style(HTML("
-    .card { margin-bottom: 0.5rem !important; margin-top: 0 !important; position: relative !important; }
-    .form-group { margin-bottom: 0.3rem !important; }
-    .radio { margin-bottom: 0.25rem !important; }
-    .checkbox { margin-bottom: 0.25rem !important; }
+    .card { margin-bottom: 0.3rem !important; margin-top: 0 !important; position: relative !important; }
+    .form-group { margin-bottom: 0.15rem !important; }
+    .radio { margin-bottom: 0.15rem !important; }
+    .checkbox { margin-bottom: 0.15rem !important; }
     .card-header { padding: 0.5rem 1rem !important; font-size: 0.95rem !important; }
     .bslib-sidebar-layout > .main { padding-top: 0.5rem !important; }
-    .form-label { margin-bottom: 0.25rem !important; }
+    .form-label { margin-bottom: 0.15rem !important; }
+    
+    /* Tighter spacing in sidebar */
+    .bslib-sidebar-layout .sidebar .card { margin-bottom: 0.25rem !important; }
     
     /* Dark mode transitions */
     body, .card, .card-header, .card-body, .form-control, .form-select, .btn {
@@ -719,15 +722,16 @@ ui <- page_sidebar(
   ")),
   sidebar = sidebar(
     width = 300,
-    div(style = "margin-bottom: 0.3rem;",
-        numericInput("weight", "Patient Weight (kg):", value = NULL, min = 1, step = 0.1)),
+    div(style = "margin-bottom: 0.1rem;",
+        numericInput("weight", "Patient Weight (kg):", value = NULL, min = 1, step = 0.1, width = "150px")),
     uiOutput("weightWarning"),
     
     card(
       card_header(class = "py-1", "Deficit Calculation Parameters"),
       card_body(
-        class = "py-1",
-        div(style = "margin-bottom: 0.3rem;",
+        class = "py-0",
+        style = "padding-top: 0.25rem !important; padding-bottom: 0.25rem !important;",
+        div(style = "margin-bottom: 0.1rem;",
             selectInput("deficitCategory", "Estimated Fluid Deficit:",
                         choices = c("Select one..." = "", 
                                     "Mild (5%)" = 5, 
@@ -737,13 +741,13 @@ ui <- page_sidebar(
                         selected = "")),
         conditionalPanel(
           condition = "input.deficitCategory == 'custom'",
-          div(style = "margin-bottom: 0.3rem;",
+          div(style = "margin-bottom: 0.1rem;",
               numericInput("customDeficit", "Custom Deficit (%)", 
                            value = 7, min = 0, max = 15, step = 0.1))
         ),
         uiOutput("deficitWarning"),
         
-        div(style = "margin-bottom: 0.3rem;",
+        div(style = "margin-bottom: 0.1rem;",
             selectInput("bolusOption", "Fluid Bolus Option:",
                         choices = c("Select one..." = "", 
                                     "10 mL/kg (max 500 mL)" = "10",
@@ -752,7 +756,7 @@ ui <- page_sidebar(
                         selected = "")),
         conditionalPanel(
           condition = "input.bolusOption == 'custom'",
-          div(style = "margin-bottom: 0.3rem;",
+          div(style = "margin-bottom: 0.1rem;",
               numericInput("customBolus", "Custom Bolus (mL)", 
                            value = 0, min = 0, step = 10))
         ),
@@ -771,9 +775,10 @@ ui <- page_sidebar(
     card(
       card_header(class = "py-1", "Display Options"),
       card_body(
-        class = "py-1",
+        class = "py-0",
+        style = "padding-top: 0.25rem !important; padding-bottom: 0.25rem !important;",
         checkboxInput("showFormulas", "Show Calculation Formulas", value = FALSE),
-        div(style = "margin-top: 0.5rem;",
+        div(style = "margin-top: 0.2rem;",
             checkboxInput("darkMode", 
                           HTML('<span id="darkModeLabel"><i class="fa-solid fa-moon"></i> Dark Mode</span>'), 
                           value = FALSE))
