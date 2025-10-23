@@ -6,7 +6,7 @@ library(dplyr)
 # ============================================================================
 # CONSTANTS
 # ============================================================================
-VERSION <- "4.1.2"
+VERSION <- "4.1.3"
 WEIGHT_CAP <- 75
 BOLUS_10_MAX <- 500
 BOLUS_20_MAX <- 1000
@@ -596,7 +596,7 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
             showcase = bs_icon("droplet"),
             theme = "primary",
             height = "100px",
-            p(class = "small text-muted mb-0", tags$strong("0.9% NaCl + 40 mEq/L K+"))
+            p(class = "small mb-0", tags$strong("0.9% NaCl + 40 mEq/L K+"))
           ),
           value_box(
             title = "Bag 2 Rate",
@@ -604,7 +604,7 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
             showcase = bs_icon("droplet-fill"),
             theme = "info",
             height = "100px",
-            p(class = "small text-muted mb-0", tags$strong("10% Dextrose"))
+            p(class = "small mb-0", tags$strong("10% Dextrose"))
           )
         )
       )
@@ -618,7 +618,7 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
 ui <- page_sidebar(
   title = tags$div(
     "DKA: Fluid Calculator",
-    tags$small(class = "text-muted ms-2", style = "font-size: 0.6em;", 
+    tags$small(class = "ms-2", style = "font-size: 0.6em;", 
                sprintf("v%s", VERSION))
   ),
   theme = bs_theme(
