@@ -13,3 +13,6 @@ TODO
 update_dka.R
 update_dka.sh
 app_update_log
+update_dka_function.R
+COMPLETE_SUMMARY.md
+R_SCRIPT_USAGE.md
