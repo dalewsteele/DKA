@@ -6,7 +6,7 @@ library(dplyr)
 # ============================================================================
 # CONSTANTS
 # ============================================================================
-VERSION <- "4.1.3"
+VERSION <- "2.1.3"
 WEIGHT_CAP <- 75
 BOLUS_10_MAX <- 500
 BOLUS_20_MAX <- 1000
@@ -352,8 +352,8 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
             tags$thead(
               tags$tr(
                 tags$th("Blood Glucose"),
-                tags$th("Bag 1 (0.9% NaCl)"),
-                tags$th("Bag 2 (10% Dex)")
+                tags$th("Bag 1 (No Dextrose, 0.9% NS, 40 mEq/L K+)"),
+                tags$th("Bag 2 (10% Dextrose, 0.9% NS, 40 mEq/L K+)")
               )
             ),
             tags$tbody(
@@ -462,11 +462,16 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
       # GIR = (Rate in mL/hr × glucose concentration in mg/mL) / (weight in kg × 60 min/hr)
       gir <- (bag2_rate * 100) / (weight * 60)
       
+      # Calculate KIR from total rate (both bags have 40 mEq/L K+ = 0.04 mEq/mL)
+      # KIR = (Total rate in mL/hr × K+ concentration in mEq/mL) / weight in kg
+      kir <- (rate * 0.04) / weight
+      
       list(
         bag1 = bag1_rate,
         bag2 = bag2_rate,
         total = round(rate),
-        gir = round(gir, 1)
+        gir = round(gir, 1),
+        kir = round(kir, 2)
       )
     })
     
@@ -583,6 +588,10 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
               tags$div(
                 class = "mt-2",
                 tags$strong("Glucose Infusion Rate: "), sprintf("%.1f mg/kg/min", rates$gir)
+              ),
+              tags$div(
+                class = "mt-1",
+                tags$strong("Potassium Infusion Rate: "), sprintf("%.2f mEq/kg/hr", rates$kir)
               )
             )
           )
@@ -596,7 +605,7 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
             showcase = bs_icon("droplet"),
             theme = "primary",
             height = "100px",
-            p(class = "small mb-0", tags$strong("0.9% NaCl + 40 mEq/L K+"))
+            p(class = "small mb-0", tags$strong("No Dextrose, 0.9% NS, 40 mEq/L K+"))
           ),
           value_box(
             title = "Bag 2 Rate",
@@ -604,7 +613,7 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
             showcase = bs_icon("droplet-fill"),
             theme = "info",
             height = "100px",
-            p(class = "small mb-0", tags$strong("10% Dextrose"))
+            p(class = "small mb-0", tags$strong("10% Dextrose, 0.9% NS, 40 mEq/L K+"))
           )
         )
       )
