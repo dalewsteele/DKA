@@ -6,7 +6,7 @@ library(dplyr)
 # ============================================================================
 # CONSTANTS
 # ============================================================================
-VERSION <- "2.1.6"
+VERSION <- "2.1.7"
 WEIGHT_CAP <- 75
 BOLUS_10_MAX <- 500
 BOLUS_20_MAX <- 1000
@@ -691,7 +691,7 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
 # ============================================================================
 ui <- page_sidebar(
   title = tags$div(
-    "DKA: Fluid Calculator",
+    "DKA: Replacement Fluid Calculator",
     tags$small(class = "ms-2", style = "font-size: 0.6em;", 
                sprintf("v%s", VERSION))
   ),
