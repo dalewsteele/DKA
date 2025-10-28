@@ -6,7 +6,7 @@ library(dplyr)
 # ============================================================================
 # CONSTANTS
 # ============================================================================
-VERSION <- "2.1.5"
+VERSION <- "2.1.6"
 WEIGHT_CAP <- 75
 BOLUS_10_MAX <- 500
 BOLUS_20_MAX <- 1000
@@ -81,7 +81,7 @@ hollidaySegarServer <- function(id, cappedWeight, maint_hourly, showFormulas) {
    - **Total**: %.0f mL/day
 
 2. **Hourly Rate**
-   - %.0f mL/day ÷ 24 hr = **%.1f mL/hr**
+   - %.0f mL/day Ã· 24 hr = **%.1f mL/hr**
 
 3. **Apply DKA Multiplier**
    - %.1f mL/hr × 1.5 = **%d mL/hr**
@@ -160,7 +160,7 @@ deficitMaintenanceServer <- function(id, cappedWeight, actualWeight, total_defic
                      sprintf("Deficit: %d | Maint: %d mL/hr", round(deficit_hr, 0), round(maint, 0))),
             if (final_rate > double_maint) {
               tags$div(class = "text-danger", style = "font-size: 0.75rem;",
-                       sprintf("⚠️ Exceeds ×2 maint (%d)", round(double_maint, 0)))
+                       sprintf("âš ï¸ Exceeds ×2 maint (%d)", round(double_maint, 0)))
             }
           )
         ),
@@ -174,7 +174,7 @@ deficitMaintenanceServer <- function(id, cappedWeight, actualWeight, total_defic
 1. **Total Deficit**: %.1f kg × 1000 × %s%% = **%.0f mL**
 2. **Bolus Administered**: **%.0f mL** %s
 3. **Remaining Deficit**: %.0f - %.0f = **%.0f mL**
-4. **Hourly Deficit Rate**: %.0f ÷ %s hr = **%d mL/hr**
+4. **Hourly Deficit Rate**: %.0f Ã· %s hr = **%d mL/hr**
 5. **Maintenance Rate**: **%d mL/hr** (Holliday-Segar)
 6. **Final Rate**: %d + %d = **%d mL/hr** (%.1f× maintenance)
               ",
@@ -253,10 +253,10 @@ trekkGuidelineServer <- function(id, actualWeight, trekk_hourly, showFormulas) {
 - 5-10 kg: 6.5 mL/kg/hr
 - 10-20 kg: 6.0 mL/kg/hr
 - 20-40 kg: 5.0 mL/kg/hr
-- ≥40 kg: 4.0 mL/kg/hr (max 250 mL/hr)
+- â‰¥40 kg: 4.0 mL/kg/hr (max 250 mL/hr)
 
 **For this patient:**
-- Weight: %.1f kg → %.1f mL/kg/hr
+- Weight: %.1f kg â†’ %.1f mL/kg/hr
 - Calculation: %.1f kg × %.1f = %.0f mL/hr%s
               ",
                       wt, rate_per_kg,
@@ -376,7 +376,7 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
             ),
             tags$tbody(
               tags$tr(
-                tags$td("≥300 mg/dL (≥16.7 mmol/L)"),
+                tags$td("â‰¥300 mg/dL (â‰¥16.7 mmol/L)"),
                 tags$td("100%"),
                 tags$td("0%")
               ),
@@ -399,7 +399,7 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
                 class = "table-warning",
                 tags$td("≤150 mg/dL (≤8.3 mmol/L)"),
                 tags$td("0%"),
-                tags$td("100% + ↑rate ×1.33 if in DKA")
+                tags$td("100% + â†‘rate ×1.33 if in DKA")
               )
             )
           )
@@ -577,7 +577,54 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
       rate_adjusted <- gluc <= 150 && !is.null(input$still_in_dka) && isTRUE(input$still_in_dka)
       low_glucose_not_dka <- gluc <= 150 && (is.null(input$still_in_dka) || !isTRUE(input$still_in_dka))
       
+      # Glucose warnings
+      gluc_mmol <- gluc / 18
+      
       tagList(
+        # Critical warning: Glucose <= 5 mmol/L
+        if (gluc_mmol <= 5) {
+          gluc_display_crit <- if (input$glucose_units == "mmol") {
+            sprintf("≤5 mmol/L")
+          } else {
+            sprintf("≤90 mg/dL")
+          }
+          card(
+            class = "border-danger mb-2",
+            card_body(
+              class = "bg-danger bg-opacity-10 text-dark py-2",
+              style = "padding: 0.5rem 0.75rem;",
+              tags$div(
+                style = "display: inline; white-space: normal;",
+                icon("exclamation-triangle", class = "text-danger"),
+                tags$strong(sprintf(" CRITICAL: Blood glucose %s. ", gluc_display_crit)),
+                "Stop insulin infusion immediately or reduce to 0.05 U/kg/hr. Consider IV dextrose bolus."
+              )
+            )
+          )
+        },
+        
+        # Warning: Glucose < 7 mmol/L
+        if (gluc_mmol < 7 && gluc_mmol > 5) {
+          gluc_display_warn <- if (input$glucose_units == "mmol") {
+            sprintf("7-11 mmol/L")
+          } else {
+            sprintf("126-198 mg/dL")
+          }
+          card(
+            class = "border-warning mb-2",
+            card_body(
+              class = "bg-warning bg-opacity-10 text-dark py-2",
+              style = "padding: 0.5rem 0.75rem;",
+              tags$div(
+                style = "display: inline; white-space: normal;",
+                icon("circle-exclamation", class = "text-warning"),
+                tags$strong(sprintf(" Blood glucose below target range (%s). ", gluc_display_warn)),
+                "Check dextrose concentration or reduce insulin infusion rate."
+              )
+            )
+          )
+        },
+        
         card(
           card_header(
             class = "bg-success text-white py-1",
@@ -595,7 +642,7 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
               if (rate_adjusted) {
                 tags$div(
                   class = "text-warning mt-2",
-                  icon("triangle-exclamation"), " Rate increased by 1.33× (glucose ≤150 mg/dL, still in DKA)"
+                  icon("triangle-exclamation"), " Rate increased by 1.33\u00d7 (glucose \u2264150 mg/dL, still in DKA)"
                 )
               } else if (low_glucose_not_dka) {
                 tags$div(
@@ -922,7 +969,7 @@ ui <- page_sidebar(
             tags$li("5-10 kg: 6.5 mL/kg/hr"),
             tags$li("10-20 kg: 6 mL/kg/hr"),
             tags$li("20-40 kg: 5 mL/kg/hr"),
-            tags$li("≥40 kg: 4 mL/kg/hr (maximum 250 mL/hr)")
+            tags$li("â‰¥40 kg: 4 mL/kg/hr (maximum 250 mL/hr)")
           ),
           tags$p(class = "text-muted", 
                  HTML('<img src="https://upload.wikimedia.org/wikipedia/commons/c/cf/Flag_of_Canada.svg" height="12px" style="vertical-align:middle;"> Based on the TREKK (Translating Emergency Knowledge for Kids) guideline from Canada')),
@@ -964,7 +1011,7 @@ server <- function(input, output, session) {
       tags$div(
         class = "inline-warning",
         style = "background-color: #fff3cd; color: #856404; border-left: 3px solid #ffc107; padding: 8px; border-radius: 3px; font-size: 14px;",
-        sprintf("⚠️ Weight (%.1f kg) is outside typical range (%d-%d kg)", input$weight, MIN_WEIGHT, MAX_WEIGHT)
+        sprintf("âš ï¸ Weight (%.1f kg) is outside typical range (%d-%d kg)", input$weight, MIN_WEIGHT, MAX_WEIGHT)
       )
     }
   })
@@ -979,7 +1026,7 @@ server <- function(input, output, session) {
       tags$div(
         class = "inline-warning",
         style = "background-color: #fff3cd; color: #856404; border-left: 3px solid #ffc107; padding: 8px; border-radius: 3px; font-size: 14px;",
-        sprintf("⚠️ Deficit (%.1f%%) is very high. Verify accuracy.", deficit_val)
+        sprintf("âš ï¸ Deficit (%.1f%%) is very high. Verify accuracy.", deficit_val)
       )
     }
   })
@@ -1003,13 +1050,13 @@ server <- function(input, output, session) {
       tags$div(
         class = "inline-warning",
         style = "background-color: #f8d7da; color: #721c24; border-left: 3px solid #dc3545; padding: 8px; border-radius: 3px; font-size: 14px;",
-        sprintf("🛑 Bolus (%.0f mL) is very large for %.1f kg weight. Verify accuracy.", bolus, w)
+        sprintf("ðŸ›‘ Bolus (%.0f mL) is very large for %.1f kg weight. Verify accuracy.", bolus, w)
       )
     } else if (w > 0 && bolus > (w * 20)) {
       tags$div(
         class = "inline-warning",
         style = "background-color: #fff3cd; color: #856404; border-left: 3px solid #ffc107; padding: 8px; border-radius: 3px; font-size: 14px;",
-        sprintf("⚠️ Bolus (%.0f mL) exceeds 20 mL/kg. Verify this is intentional.", bolus)
+        sprintf("âš ï¸ Bolus (%.0f mL) exceeds 20 mL/kg. Verify this is intentional.", bolus)
       )
     }
   })
