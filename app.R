@@ -6,7 +6,7 @@ library(dplyr)
 # ============================================================================
 # CONSTANTS
 # ============================================================================
-VERSION <- "2.1.11"
+VERSION <- "2.2.0"
 WEIGHT_CAP <- 75
 BOLUS_10_MAX <- 500
 BOLUS_20_MAX <- 1000
@@ -1013,6 +1013,14 @@ ui <- page_sidebar(
         )
       )
     )
+  ),
+  
+  # Footer
+  tags$footer(
+    class = "text-center text-muted small mt-4 pt-3 border-top",
+    style = "margin-top: 2rem; padding: 1rem; background-color: #f8f9fa;",
+    "© 2025 Dale Steele | ",
+    tags$a("MIT License", href = "https://opensource.org/licenses/MIT", target = "_blank")
   )
 )
 
