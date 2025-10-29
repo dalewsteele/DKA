@@ -6,7 +6,7 @@ library(dplyr)
 # ============================================================================
 # CONSTANTS
 # ============================================================================
-VERSION <- "2.1.8"
+VERSION <- "2.1.9"
 WEIGHT_CAP <- 75
 BOLUS_10_MAX <- 500
 BOLUS_20_MAX <- 1000
@@ -447,6 +447,27 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
       rate
     })
     
+    # Calculate unadjusted rate (before 1.33× multiplier)
+    unadjusted_rate <- reactive({
+      req(input$method_select)
+      
+      rate <- switch(input$method_select,
+                     "hs" = {
+                       if (!isTRUE(hs_selected())) return(NULL)
+                       maint_hourly() * 1.5
+                     },
+                     "dm" = {
+                       if (!isTRUE(md_selected())) return(NULL)
+                       final_deficit_maint_rate()
+                     },
+                     "trekk" = {
+                       if (!isTRUE(trekk_selected())) return(NULL)
+                       trekk_hourly()
+                     },
+                     NULL)
+      rate
+    })
+    
     # Calculate bag percentages based on glucose
     bag_percentages <- reactive({
       req(input$blood_glucose)
@@ -489,7 +510,8 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
         bag2 = bag2_rate,
         total = round(rate),
         gir = round(gir, 1),
-        kir = round(kir, 2)
+        kir = round(kir, 2),
+        unadjusted = round(unadjusted_rate())
       )
     })
     
@@ -577,11 +599,8 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
       rate_adjusted <- gluc <= 150 && !is.null(input$still_in_dka) && isTRUE(input$still_in_dka)
       low_glucose_not_dka <- gluc <= 150 && (is.null(input$still_in_dka) || !isTRUE(input$still_in_dka))
       
-      # Calculate base rate (before 1.33x multiplier) for display
-      base_rate_value <- NULL
-      if (rate_adjusted) {
-        base_rate_value <- round(rates$total / 1.33)
-      }
+      # Get base rate (before 1.33x multiplier) for display
+      base_rate_value <- if (rate_adjusted) rates$unadjusted else NULL
       
       # Calculate glucose warnings
       gluc_mmol <- gluc / 18
