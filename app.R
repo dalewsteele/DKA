@@ -6,7 +6,7 @@ library(dplyr)
 # ============================================================================
 # CONSTANTS
 # ============================================================================
-VERSION <- "2.1.7"
+VERSION <- "2.1.8"
 WEIGHT_CAP <- 75
 BOLUS_10_MAX <- 500
 BOLUS_20_MAX <- 1000
@@ -55,7 +55,7 @@ hollidaySegarServer <- function(id, cappedWeight, maint_hourly, showFormulas) {
       card(
         card_header(
           class = "bg-primary text-white py-1",
-          tags$div(style = "font-size: 0.9rem;", "Holliday-Segar ×1.5 Maintenance")
+          tags$div(style = "font-size: 0.9rem;", "Holliday-Segar \u00d71.5 Maintenance")
         ),
         card_body(
           class = "py-1",
@@ -65,7 +65,7 @@ hollidaySegarServer <- function(id, cappedWeight, maint_hourly, showFormulas) {
             tags$div(class = "rate-value-hs", style = "font-size: 1.5rem; font-weight: bold; margin: 2px 0;",
                      paste(rate_1_5, "mL/hr")),
             tags$div(class = "text-muted", style = "font-size: 0.75rem;",
-                     sprintf("Maint: %d | ×2.0: %d mL/hr", round(maint, 0), round(maint * 2, 0)))
+                     sprintf("Maint: %d | \u00d72.0: %d mL/hr", round(maint, 0), round(maint * 2, 0)))
           )
         ),
         if (isTRUE(showFormulas())) {
@@ -76,15 +76,15 @@ hollidaySegarServer <- function(id, cappedWeight, maint_hourly, showFormulas) {
 **Calculation Steps:**
 
 1. **Daily Maintenance (Holliday-Segar)**
-   - First 10 kg: %.1f kg × 100 mL/kg = %.0f mL/day
+   - First 10 kg: %.1f kg \u00d7 100 mL/kg = %.0f mL/day
    %s%s
    - **Total**: %.0f mL/day
 
 2. **Hourly Rate**
-   - %.0f mL/day Ã· 24 hr = **%.1f mL/hr**
+   - %.0f mL/day \u00f7 24 hr = **%.1f mL/hr**
 
 3. **Apply DKA Multiplier**
-   - %.1f mL/hr × 1.5 = **%d mL/hr**
+   - %.1f mL/hr \u00d7 1.5 = **%d mL/hr**
               ",
                       min(cappedWeight(), 10),
                       min(cappedWeight(), 10) * 100,
@@ -171,12 +171,12 @@ deficitMaintenanceServer <- function(id, cappedWeight, actualWeight, total_defic
               sprintf("
 **Calculation Steps:**
 
-1. **Total Deficit**: %.1f kg × 1000 × %s%% = **%.0f mL**
+1. **Total Deficit**: %.1f kg \u00d7 1000 \u00d7 %s%% = **%.0f mL**
 2. **Bolus Administered**: **%.0f mL** %s
 3. **Remaining Deficit**: %.0f - %.0f = **%.0f mL**
-4. **Hourly Deficit Rate**: %.0f Ã· %s hr = **%d mL/hr**
+4. **Hourly Deficit Rate**: %.0f \u00f7 %s hr = **%d mL/hr**
 5. **Maintenance Rate**: **%d mL/hr** (Holliday-Segar)
-6. **Final Rate**: %d + %d = **%d mL/hr** (%.1f× maintenance)
+6. **Final Rate**: %d + %d = **%d mL/hr** (%.1f\u00d7 maintenance)
               ",
                       cappedWeight(), deficit_pct(), deficit,
                       bolus, if(bolus_capped) "*(capped)*" else "",
@@ -253,10 +253,10 @@ trekkGuidelineServer <- function(id, actualWeight, trekk_hourly, showFormulas) {
 - 5-10 kg: 6.5 mL/kg/hr
 - 10-20 kg: 6.0 mL/kg/hr
 - 20-40 kg: 5.0 mL/kg/hr
-- â‰¥40 kg: 4.0 mL/kg/hr (max 250 mL/hr)
+- ≥40 kg: 4.0 mL/kg/hr (max 250 mL/hr)
 
 **For this patient:**
-- Weight: %.1f kg â†’ %.1f mL/kg/hr
+- Weight: %.1f kg → %.1f mL/kg/hr
 - Calculation: %.1f kg × %.1f = %.0f mL/hr%s
               ",
                       wt, rate_per_kg,
@@ -376,7 +376,7 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
             ),
             tags$tbody(
               tags$tr(
-                tags$td("â‰¥300 mg/dL (â‰¥16.7 mmol/L)"),
+                tags$td("≥300 mg/dL (≥16.7 mmol/L)"),
                 tags$td("100%"),
                 tags$td("0%")
               ),
@@ -399,7 +399,7 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
                 class = "table-warning",
                 tags$td("≤150 mg/dL (≤8.3 mmol/L)"),
                 tags$td("0%"),
-                tags$td("100% + â†‘rate ×1.33 if in DKA")
+                tags$td("100% + ↑rate ×1.33 if in DKA")
               )
             )
           )
@@ -577,11 +577,17 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
       rate_adjusted <- gluc <= 150 && !is.null(input$still_in_dka) && isTRUE(input$still_in_dka)
       low_glucose_not_dka <- gluc <= 150 && (is.null(input$still_in_dka) || !isTRUE(input$still_in_dka))
       
-      # Glucose warnings
+      # Calculate base rate (before 1.33x multiplier) for display
+      base_rate_value <- NULL
+      if (rate_adjusted) {
+        base_rate_value <- round(rates$total / 1.33)
+      }
+      
+      # Calculate glucose warnings
       gluc_mmol <- gluc / 18
       
       tagList(
-        # Critical warning: Glucose <= 5 mmol/L
+        # Critical warning: Glucose ≤ 90 mg/dL (≤5 mmol/L)
         if (gluc_mmol <= 5) {
           gluc_display_crit <- if (input$glucose_units == "mmol") {
             sprintf("≤5 mmol/L")
@@ -603,12 +609,12 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
           )
         },
         
-        # Warning: Glucose < 7 mmol/L
+        # Warning: Glucose 126-198 mg/dL (7-11 mmol/L)
         if (gluc_mmol < 7 && gluc_mmol > 5) {
           gluc_display_warn <- if (input$glucose_units == "mmol") {
-            sprintf("7-11 mmol/L")
+            sprintf("5-7 mmol/L")
           } else {
-            sprintf("126-198 mg/dL")
+            sprintf("90-126 mg/dL")
           }
           card(
             class = "border-warning mb-2",
@@ -642,7 +648,9 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
               if (rate_adjusted) {
                 tags$div(
                   class = "text-warning mt-2",
-                  icon("triangle-exclamation"), " Rate increased by 1.33\u00d7 (glucose \u2264150 mg/dL, still in DKA)"
+                  icon("triangle-exclamation"), 
+                  sprintf(" Rate increased by 1.33\u00d7 from %d to %d mL/hr (glucose \u2264150 mg/dL, still in DKA)", 
+                          base_rate_value, rates$total)
                 )
               } else if (low_glucose_not_dka) {
                 tags$div(
@@ -691,7 +699,7 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
 # ============================================================================
 ui <- page_sidebar(
   title = tags$div(
-    "DKA: Replacement Fluid Calculator",
+    "DKA: Fluid Calculator",
     tags$small(class = "ms-2", style = "font-size: 0.6em;", 
                sprintf("v%s", VERSION))
   ),
@@ -969,7 +977,7 @@ ui <- page_sidebar(
             tags$li("5-10 kg: 6.5 mL/kg/hr"),
             tags$li("10-20 kg: 6 mL/kg/hr"),
             tags$li("20-40 kg: 5 mL/kg/hr"),
-            tags$li("â‰¥40 kg: 4 mL/kg/hr (maximum 250 mL/hr)")
+            tags$li("≥40 kg: 4 mL/kg/hr (maximum 250 mL/hr)")
           ),
           tags$p(class = "text-muted", 
                  HTML('<img src="https://upload.wikimedia.org/wikipedia/commons/c/cf/Flag_of_Canada.svg" height="12px" style="vertical-align:middle;"> Based on the TREKK (Translating Emergency Knowledge for Kids) guideline from Canada')),
