@@ -6,7 +6,7 @@ library(dplyr)
 # ============================================================================
 # CONSTANTS
 # ============================================================================
-VERSION <- "2.1.10"
+VERSION <- "2.1.11"
 WEIGHT_CAP <- 75
 BOLUS_10_MAX <- 500
 BOLUS_20_MAX <- 1000
@@ -621,8 +621,8 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
               tags$div(
                 style = "display: inline; white-space: normal;",
                 icon("exclamation-triangle", class = "text-danger"),
-                tags$strong(sprintf(" CRITICAL: Blood glucose %s. ", gluc_display_crit)),
-                "Stop insulin infusion immediately or reduce to 0.05 U/kg/hr. Consider IV dextrose bolus."
+                tags$strong(" CRITICAL: Blood glucose ≤90 mg/dL — "),
+                "1) Pause insulin infusion immediately, 2) Give IV dextrose bolus, 3) Recheck glucose in 15 minutes"
               )
             )
           )
@@ -718,7 +718,7 @@ twoBagServer <- function(id, maint_hourly, final_deficit_maint_rate, trekk_hourl
 # ============================================================================
 ui <- page_sidebar(
   title = tags$div(
-    "DKA: Replacement Fluid Calculator",
+    "DKA: Fluid Calculator",
     tags$small(class = "ms-2", style = "font-size: 0.6em;", 
                sprintf("v%s", VERSION))
   ),
