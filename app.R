@@ -1,3 +1,8 @@
+
+# Copyright 2025 Dale Steele
+# Licensed under the MIT License - see LICENSE file for details
+
+
 library(shiny)
 library(bslib)
 library(bsicons)
@@ -6,7 +11,7 @@ library(dplyr)
 # ============================================================================
 # CONSTANTS
 # ============================================================================
-VERSION <- "2.2.0"
+VERSION <- "2.2.1"
 WEIGHT_CAP <- 75
 BOLUS_10_MAX <- 500
 BOLUS_20_MAX <- 1000
